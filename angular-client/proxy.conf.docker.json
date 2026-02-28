@@ -1,0 +1,41 @@
+{
+  "/api": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "cookieDomainRewrite": "localhost"
+  },
+  "/login": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/logout": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/callback": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "cookieDomainRewrite": "localhost"
+  },
+  "/ws": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true,
+    "cookieDomainRewrite": "localhost"
+  },
+  "/realms": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/resources": {
+    "target": "http://nginx-gateway:8080",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

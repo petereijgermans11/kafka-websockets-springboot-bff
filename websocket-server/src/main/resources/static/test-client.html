@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>TPS WebSocket Test Client (Spring Boot / STOMP)</title>
+  <style>
+    body { font-family: monospace; background: #1e1e1e; color: #d4d4d4; margin: 0; padding: 20px; }
+    h2   { color: #4ec9b0; }
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    button {
+      background: #0e639c; color: white; border: none;
+      padding: 8px 14px; cursor: pointer; border-radius: 4px;
+    }
+    button:hover { background: #1177bb; }
+    button.danger { background: #c72e2e; }
+    #status { margin-bottom: 8px; }
+    .connected    { color: #4ec9b0; }
+    .disconnected { color: #f44747; }
+    #log {
+      background: #252526; border: 1px solid #3c3c3c;
+      padding: 12px; height: 460px; overflow-y: auto;
+      white-space: pre-wrap; font-size: 12px;
+    }
+    .log-data       { color: #9cdcfe; }
+    .log-subscribed { color: #dcdcaa; }
+    .log-error      { color: #f44747; }
+    .log-info       { color: #608b4e; }
+  </style>
+
+  <!-- STOMP.js + SockJS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+  <h2>TPS WebSocket Test Client — Spring Boot / STOMP</h2>
+
+  <div id="status" class="disconnected">● Niet verbonden</div>
+
+  <div class="controls">
+    <button onclick="connect()">Verbinden</button>
+    <button class="danger" onclick="disconnect()">Verbreken</button>
+  </div>
+
+  <div class="controls">
+    <strong>Abonneer op sbNaam:</strong>
+    <button onclick="subscribe('ASD')">ASD</button>
+    <button onclick="subscribe('UT')">UT</button>
+    <button onclick="subscribe('RTD')">RTD</button>
+    <button onclick="subscribe('EHV')">EHV</button>
+    <button onclick="subscribe('LDN')">LDN</button>
+  </div>
+
+  <div class="controls">
+    <button onclick="clearLog()">Log wissen</button>
+  </div>
+
+  <div id="log"></div>
+
+  <script>
+    const WS_URL = 'http://localhost:8080/ws';
+    const TOPIC_PREFIX = '/topic/v1/treinpositie/';
+    const APP_PREFIX   = '/app/v1/treinpositie/';
+
+    let stompClient = null;
+    const subscriptions = {};
+
+    function log(msg, cls = '') {
+      const el = document.getElementById('log');
+      const line = document.createElement('div');
+      if (cls) line.className = cls;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function connect() {
+      if (stompClient && stompClient.connected) {
+        log('Al verbonden', 'log-info');
+        return;
+      }
+
+      const socket = new SockJS(WS_URL);
+      stompClient = Stomp.over(socket);
+      stompClient.debug = null; // zet op console.log voor debug output
+
+      stompClient.connect({}, () => {
+        document.getElementById('status').className = 'connected';
+        document.getElementById('status').textContent = '● Verbonden met ' + WS_URL;
+        log('Verbonden met STOMP server!', 'log-info');
+      }, (err) => {
+        document.getElementById('status').className = 'disconnected';
+        document.getElementById('status').textContent = '● Niet verbonden';
+        log('Verbindingsfout: ' + JSON.stringify(err), 'log-error');
+      });
+    }
+
+    function disconnect() {
+      if (stompClient) {
+        stompClient.disconnect(() => {
+          document.getElementById('status').className = 'disconnected';
+          document.getElementById('status').textContent = '● Niet verbonden';
+          log('Verbinding verbroken', 'log-info');
+        });
+      }
+    }
+
+    function subscribe(sbNaam) {
+      if (!stompClient || !stompClient.connected) {
+        log('Niet verbonden!', 'log-error');
+        return;
+      }
+      if (subscriptions[sbNaam]) {
+        log(`Al geabonneerd op ${sbNaam}`, 'log-info');
+        return;
+      }
+
+      // Abonneer op het STOMP topic → ontvangt live updates
+      subscriptions[sbNaam] = stompClient.subscribe(
+        TOPIC_PREFIX + sbNaam,
+        (frame) => onMessage(sbNaam, frame)
+      );
+
+      // Vraag direct snapshot op via /app prefix
+      stompClient.subscribe(
+        APP_PREFIX + sbNaam,
+        (frame) => onMessage(sbNaam, frame)
+      );
+
+      log(`SUBSCRIBED op /topic/v1/treinpositie/${sbNaam}`, 'log-subscribed');
+    }
+
+    function onMessage(sbNaam, frame) {
+      try {
+        const p = JSON.parse(frame.body);
+        const treinen = (p.treinNummerVensterBezettingList || [])
+          .map(t => `${t.treinNummer}@${t.sectionId}`)
+          .join(', ');
+        log(`DATA [${p.state}] /topic/v1/treinpositie/${p.sbNaam} → ${treinen}`, 'log-data');
+      } catch (e) {
+        log('Parse fout: ' + e.message, 'log-error');
+      }
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+  </script>
+</body>
+</html>

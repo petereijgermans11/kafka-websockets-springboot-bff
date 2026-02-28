@@ -1,0 +1,151 @@
+services:
+
+  # ─── Keycloak (OIDC Identity Provider) ────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: sb-keycloak
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME_URL: http://localhost:8008
+      KC_HOSTNAME_ADMIN_URL: http://localhost:8000
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json
+    command: start-dev --http-port=8000 --import-realm
+    healthcheck:
+      test: "{ printf 'HEAD /health/ready HTTP/1.0\\r\\n\\r\\n' >&0; grep 'HTTP/1.0 200'; } 0<>/dev/tcp/localhost/9000"
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ─── Nginx BFF Gateway (OIDC + WebSocket proxy) ───────────────────────────
+  nginx-gateway:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: sb-nginx-gateway
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      websocket-server:
+        condition: service_started
+    ports:
+      - "8008:8080"
+    healthcheck:
+      test: "nc -z localhost 8080 || exit 1"
+      start_period: 5s
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Kafka (KRaft, geen ZooKeeper nodig) ──────────────────────────────────
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: sb-kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka:29092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  # ─── Kafka topics aanmaken ─────────────────────────────────────────────────
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: sb-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/init/create-topics.sh"]
+    volumes:
+      - ./kafka/create-topics.sh:/init/create-topics.sh:ro
+    restart: "no"
+
+  # ─── TPS data-producer (Spring Boot) ──────────────────────────────────────
+  data-producer:
+    build:
+      context: ./data-producer
+      dockerfile: Dockerfile
+    container_name: sb-tps-data-producer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-tps-treinpositie}
+      PUBLISH_INTERVAL_MS: ${PUBLISH_INTERVAL_MS:-2000}
+    restart: unless-stopped
+
+  # ─── WebSocket server (Spring Boot) ───────────────────────────────────────
+  websocket-server:
+    build:
+      context: ./websocket-server
+      dockerfile: Dockerfile
+    container_name: sb-tps-websocket-server
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+    ports:
+      - "${WS_PORT:-8080}:8080"
+    environment:
+      KAFKA_BROKERS: kafka:29092
+      KAFKA_TOPIC: ${KAFKA_TOPIC:-tps-treinpositie}
+      SERVER_PORT: 8080
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8000/realms/greeter/protocol/openid-connect/certs
+    restart: unless-stopped
+
+  # ─── Angular client ────────────────────────────────────────────────────────
+  angular-client:
+    image: node:22-alpine
+    container_name: sb-angular-client
+    working_dir: /app
+    volumes:
+      - ./angular-client:/app
+      - /app/node_modules
+    ports:
+      - "4300:4300"
+    command: sh -c "npm install && npx ng serve --host 0.0.0.0 --port 4300 --proxy-config proxy.conf.docker.json"
+    depends_on:
+      - nginx-gateway
+
+  # ─── Kafka UI ──────────────────────────────────────────────────────────────
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: sb-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "9090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+volumes:
+  kafka-data:

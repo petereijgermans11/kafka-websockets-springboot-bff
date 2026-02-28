@@ -1,0 +1,56 @@
+<div class="container">
+  <div *ngIf="!authChecked" class="auth-loading">Authenticeren...</div>
+
+  <ng-container *ngIf="authChecked && user">
+  <header>
+    <div class="header-left">
+      <h1>TPS Treinpositie Viewer</h1>
+      <span class="status" [class.connected]="connected">
+        {{ connected ? '● Verbonden' : '○ Verbinding maken...' }}
+      </span>
+    </div>
+    <div class="header-right">
+      <span class="user-info">{{ user.name || user.username }}</span>
+      <button class="logout-btn" (click)="logout()">Uitloggen</button>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card" *ngFor="let sbNaam of sbNamen">
+      <h2>{{ sbNaam }}</h2>
+      <ng-container *ngIf="berichten.get(sbNaam) as bericht; else loading">
+        <div class="meta">
+          <span class="badge" [class.snapshot]="bericht.state === 'SNAPSHOT'">
+            {{ bericht.state }}
+          </span>
+          <span class="time">{{ bericht.timestamp | date:'HH:mm:ss' }}</span>
+        </div>
+        <table *ngIf="bericht.treinNummerVensterBezettingList.length > 0; else geen">
+          <thead>
+            <tr>
+              <th>Trein</th>
+              <th>Section</th>
+              <th>Rit Nr.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of bericht.treinNummerVensterBezettingList"
+                [class.row-onbetrouwbaar]="!t.betrouwbaar"
+                [class.row-update]="t.betrouwbaar && bericht.state === 'UPDATE'">
+              <td>{{ t.treinNummer }}</td>
+              <td>{{ t.sectionId }}</td>
+              <td>{{ t.internRitNummer }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #geen>
+          <p class="empty">Geen treinen</p>
+        </ng-template>
+      </ng-container>
+      <ng-template #loading>
+        <p class="empty">Wachten op data...</p>
+      </ng-template>
+    </div>
+  </div>
+  </ng-container>
+</div>
