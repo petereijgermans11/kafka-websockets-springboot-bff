@@ -1,0 +1,4 @@
+{
+  "mf-tps": "http://localhost:4301/remoteEntry.json",
+  "mf-infra": "http://localhost:4302/remoteEntry.json"
+}

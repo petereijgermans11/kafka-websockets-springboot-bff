@@ -1,0 +1,153 @@
+.viewer {
+  color: #e2e8f0;
+}
+
+.viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.viewer-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #f59e0b;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.status.connected {
+  color: #4ade80;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #334155;
+}
+
+.card h3 {
+  margin: 0 0 12px;
+  font-size: 1.1rem;
+  color: #f59e0b;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f59e0b;
+  color: #0f172a;
+  font-weight: bold;
+}
+
+.badge.snapshot {
+  background: #8b5cf6;
+  color: white;
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+th {
+  text-align: left;
+  padding: 6px 8px;
+  color: #64748b;
+  border-bottom: 1px solid #334155;
+}
+
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #1e293b;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+.type-badge {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  margin-right: 4px;
+  color: white;
+  background: #475569;
+}
+
+.type-badge[data-type="WISSEL"] { background: #3b82f6; }
+.type-badge[data-type="SEIN"] { background: #22c55e; }
+.type-badge[data-type="SECTIE"] { background: #a855f7; }
+.type-badge[data-type="KRUISING"] { background: #ef4444; }
+
+.object-naam {
+  font-family: monospace;
+  font-weight: bold;
+  color: #e2e8f0;
+}
+
+.status-active {
+  color: #fbbf24;
+  font-weight: bold;
+}
+
+.status-inactive {
+  color: #475569;
+}
+
+.status-gestoord {
+  color: #ef4444;
+  font-weight: bold;
+}
+
+tr.row-gestoord td {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+tr.row-onbetrouwbaar td {
+  background: #451a03;
+  color: #fdba74;
+}
+
+tr.row-bezet td {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+.empty {
+  color: #475569;
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+

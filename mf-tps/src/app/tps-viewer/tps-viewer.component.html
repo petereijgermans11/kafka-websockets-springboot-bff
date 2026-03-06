@@ -1,0 +1,46 @@
+<div class="viewer">
+  <div class="viewer-header">
+    <h2>TPS Treinpositie</h2>
+    <span class="status" [class.connected]="connected">
+      {{ connected ? '● Verbonden' : '○ Verbinding maken...' }}
+    </span>
+  </div>
+
+  <div class="grid">
+    <div class="card" *ngFor="let sbNaam of sbNamen">
+      <h3>{{ sbNaam }}</h3>
+      <ng-container *ngIf="berichten.get(sbNaam) as bericht; else loading">
+        <div class="meta">
+          <span class="badge" [class.snapshot]="bericht.state === 'SNAPSHOT'">
+            {{ bericht.state }}
+          </span>
+          <span class="time">{{ bericht.timestamp | date:'HH:mm:ss' }}</span>
+        </div>
+        <table *ngIf="bericht.treinNummerVensterBezettingList.length > 0; else geen">
+          <thead>
+            <tr>
+              <th>Trein</th>
+              <th>Section</th>
+              <th>Rit Nr.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of bericht.treinNummerVensterBezettingList"
+                [class.row-onbetrouwbaar]="!t.betrouwbaar"
+                [class.row-update]="t.betrouwbaar && bericht.state === 'UPDATE'">
+              <td>{{ t.treinNummer }}</td>
+              <td>{{ t.sectionId }}</td>
+              <td>{{ t.internRitNummer }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #geen>
+          <p class="empty">Geen treinen</p>
+        </ng-template>
+      </ng-container>
+      <ng-template #loading>
+        <p class="empty">Wachten op data...</p>
+      </ng-template>
+    </div>
+  </div>
+</div>

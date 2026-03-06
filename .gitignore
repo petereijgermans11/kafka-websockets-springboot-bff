@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Angular / build
+.angular/
+dist/
+*.tsbuildinfo
+
+# Vite / Native Federation
+**/vite/deps/
+**/vite/deps_ssr/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+npm-debug.log*
+.npm
+.tmp
+.temp
+.cache
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Optional: uncomment to normalize line endings and avoid CRLF warnings
+# * text=auto eol=lf

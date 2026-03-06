@@ -85,12 +85,12 @@ services:
       - ./kafka/create-topics.sh:/init/create-topics.sh:ro
     restart: "no"
 
-  # ─── TPS data-producer (Spring Boot) ──────────────────────────────────────
+  # ─── TPS + RITS data-producer (Spring Boot) ──────────────────────────────
   data-producer:
     build:
       context: ./data-producer
       dockerfile: Dockerfile
-    container_name: sb-tps-data-producer
+    container_name: sb-data-producer
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -98,6 +98,8 @@ services:
       KAFKA_BROKERS: kafka:29092
       KAFKA_TOPIC: ${KAFKA_TOPIC:-tps-treinpositie}
       PUBLISH_INTERVAL_MS: ${PUBLISH_INTERVAL_MS:-2000}
+      KAFKA_TOPIC_RITS: ${KAFKA_TOPIC_RITS:-rits-infratoestand}
+      RITS_PUBLISH_INTERVAL_MS: ${RITS_PUBLISH_INTERVAL_MS:-3000}
     restart: unless-stopped
 
   # ─── WebSocket server (Spring Boot) ───────────────────────────────────────
@@ -105,7 +107,7 @@ services:
     build:
       context: ./websocket-server
       dockerfile: Dockerfile
-    container_name: sb-tps-websocket-server
+    container_name: sb-websocket-server
     depends_on:
       kafka-init:
         condition: service_completed_successfully
@@ -116,21 +118,52 @@ services:
     environment:
       KAFKA_BROKERS: kafka:29092
       KAFKA_TOPIC: ${KAFKA_TOPIC:-tps-treinpositie}
+      KAFKA_TOPIC_RITS: ${KAFKA_TOPIC_RITS:-rits-infratoestand}
       SERVER_PORT: 8080
       KEYCLOAK_JWK_SET_URI: http://keycloak:8000/realms/greeter/protocol/openid-connect/certs
     restart: unless-stopped
 
-  # ─── Angular client ────────────────────────────────────────────────────────
-  angular-client:
+  # ─── Host App (Shell) ─────────────────────────────────────────────────────
+  host-app:
     image: node:22-alpine
-    container_name: sb-angular-client
+    container_name: sb-host-app
     working_dir: /app
     volumes:
-      - ./angular-client:/app
+      - ./host-app:/app
       - /app/node_modules
     ports:
       - "4300:4300"
-    command: sh -c "npm install && npx ng serve --host 0.0.0.0 --port 4300 --proxy-config proxy.conf.docker.json"
+    command: sh -c "npm install && cp proxy.conf.docker.json proxy.conf.json && npx ng serve"
+    depends_on:
+      - nginx-gateway
+      - mf-tps
+      - mf-infra
+
+  # ─── MF-TPS (Microfrontend TPS) ─────────────────────────────────────────
+  mf-tps:
+    image: node:22-alpine
+    container_name: sb-mf-tps
+    working_dir: /app
+    volumes:
+      - ./mf-tps:/app
+      - /app/node_modules
+    ports:
+      - "4301:4301"
+    command: sh -c "npm install && cp proxy.conf.docker.json proxy.conf.json && npx ng serve"
+    depends_on:
+      - nginx-gateway
+
+  # ─── MF-INFRA (Microfrontend RITS) ───────────────────────────────────────
+  mf-infra:
+    image: node:22-alpine
+    container_name: sb-mf-infra
+    working_dir: /app
+    volumes:
+      - ./mf-rits:/app
+      - /app/node_modules
+    ports:
+      - "4302:4302"
+    command: sh -c "npm install && cp proxy.conf.docker.json proxy.conf.json && npx ng serve"
     depends_on:
       - nginx-gateway
 

@@ -1,0 +1,69 @@
+<div class="viewer">
+  <div class="viewer-header">
+    <h2>RITS Infratoestand</h2>
+    <span class="status" [class.connected]="connected">
+      {{ connected ? '● Verbonden' : '○ Verbinding maken...' }}
+    </span>
+  </div>
+
+  <div class="grid">
+    <div class="card" *ngFor="let gebiedNaam of gebieden">
+      <h3>{{ gebiedNaam }}</h3>
+      <ng-container *ngIf="berichten.get(gebiedNaam) as bericht; else loading">
+        <div class="meta">
+          <span class="badge" [class.snapshot]="bericht.state === 'SNAPSHOT'">
+            {{ bericht.state }}
+          </span>
+          <span class="time">{{ bericht.timestamp | date:'HH:mm:ss' }}</span>
+        </div>
+        <table *ngIf="bericht.infraToestandList.length > 0; else geen">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Object</th>
+              <th>Bezet</th>
+              <th>Gestoord</th>
+              <th>Rijweg</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of bericht.infraToestandList"
+                [class.row-gestoord]="e.gestoord"
+                [class.row-onbetrouwbaar]="!e.betrouwbaar"
+                [class.row-bezet]="e.bezet && !e.gestoord && e.betrouwbaar">
+              <td>
+                <span class="type-badge" [attr.data-type]="e.infraObjectType">
+                  {{ getTypeIcon(e.infraObjectType) }}
+                </span>
+                {{ e.infraObjectType }}
+              </td>
+              <td class="object-naam">{{ e.infraObjectNaam }}</td>
+              <td>
+                <span [class.status-active]="e.bezet" [class.status-inactive]="!e.bezet">
+                  {{ e.bezet ? 'Ja' : 'Nee' }}
+                </span>
+              </td>
+              <td>
+                <span [class.status-gestoord]="e.gestoord" [class.status-inactive]="!e.gestoord">
+                  {{ e.gestoord ? 'Ja' : 'Nee' }}
+                </span>
+              </td>
+              <td>
+                <span [class.status-active]="e.ligtInRijweg" [class.status-inactive]="!e.ligtInRijweg">
+                  {{ e.ligtInRijweg ? 'Ja' : 'Nee' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <ng-template #geen>
+          <p class="empty">Geen infra-elementen</p>
+        </ng-template>
+      </ng-container>
+      <ng-template #loading>
+        <p class="empty">Wachten op data...</p>
+      </ng-template>
+    </div>
+  </div>
+</div>
+
