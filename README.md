@@ -1,7 +1,6 @@
-# kafka-websockets-springBoot — TPS EMS flow simulatie (Spring Boot)
+# kafka-websockets-springboot-bff — TPS EMS flow + Angular frontend
 
-Spring Boot implementatie van de **TPS EMS → Kafka → STOMP WebSocket** dataflow.
-Dit is de Java/Spring Boot versie van het `kafka-websockets` Node.js project.
+Spring Boot BFF met **TPS EMS → Kafka → STOMP WebSocket** dataflow en een **Angular** frontend (host-app met micro-frontends mf-rits en mf-tps via Native Federation).
 
 ## Architectuur
 
@@ -32,8 +31,10 @@ TPS EMS Simulator               Kafka                      WebSocket Server
 
 ## Snel starten
 
+### Backend (Kafka + services)
+
 ```bash
-cd kafka-websockets-springBoot
+cd kafka-websockets-springboot-bff
 docker compose up --build
 ```
 
@@ -68,7 +69,7 @@ Het protocol is STOMP over WebSocket (via SockJS):
 
 ## Vergelijking met Node.js versie
 
-| Onderdeel | Node.js (`kafka-websockets`) | Spring Boot (`kafka-websockets-springBoot`) |
+| Onderdeel | Node.js (`kafka-websockets`) | Spring Boot (deze repo) |
 |-----------|-------------------------------|---------------------------------------------|
 | Kafka producer | `kafkajs` KafkaProducer | `KafkaTemplate<String, TreinPositieBericht>` |
 | Scheduler | `setInterval` | `@Scheduled` |
@@ -99,10 +100,35 @@ cd data-producer && mvn spring-boot:run
 cd websocket-server && mvn spring-boot:run
 ```
 
+## Frontend (Angular)
+
+| App       | Rol                    |
+|-----------|------------------------|
+| `host-app`| Shell; laadt micro-frontends |
+| `mf-rits` | Micro-frontend (RITS)  |
+| `mf-tps`  | Micro-frontend (TPS)   |
+
+Ontwikkel lokaal (na `docker compose up` voor de backend):
+
+```bash
+# Host + remotes (dev-server met federation)
+cd host-app && npm install && npm start
+```
+
+Build voor productie:
+
+```bash
+cd host-app && npm run build
+cd mf-rits  && npm run build
+cd mf-tps   && npm run build
+```
+
 ## Projectstructuur
 
 ```
-kafka-websockets-springBoot/
+kafka-websockets-springboot-bff/
+├── .gitignore
+├── .gitattributes
 ├── docker-compose.yml
 ├── .env
 ├── kafka/
@@ -112,20 +138,18 @@ kafka-websockets-springBoot/
 │   ├── Dockerfile
 │   └── src/main/java/nl/prorail/tps/producer/
 │       ├── TpsDataProducerApplication.java ← @EnableScheduling
-│       ├── model/TreinPositieEntry.java
-│       ├── model/TreinPositieBericht.java
-│       ├── data/TpsDataset.java            ← hardcoded dataset (10 records)
-│       └── service/TpsSimulatorService.java ← @Scheduled + KafkaTemplate
-└── websocket-server/                       ← Spring Boot: Kafka consumer + STOMP
-    ├── pom.xml
-    ├── Dockerfile
-    └── src/main/java/nl/prorail/tps/websocket/
-        ├── TpsWebSocketServerApplication.java
-        ├── config/WebSocketConfig.java          ← STOMP endpoint /ws
-        ├── model/TreinPositieEntry.java
-        ├── model/TreinPositieBericht.java
-        ├── service/TpsKafkaConsumerService.java ← @KafkaListener + latestState
-        └── controller/TpsWebSocketController.java ← @SubscribeMapping snapshot
-    └── src/main/resources/static/
-        └── test-client.html                     ← STOMP.js testpagina
+│       ├── model/
+│       ├── data/
+│       └── service/
+├── websocket-server/                       ← Spring Boot: Kafka consumer + STOMP
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/main/java/.../websocket/
+│   └── src/main/resources/static/
+│       └── test-client.html
+├── host-app/                               ← Angular shell (Native Federation)
+├── mf-rits/                                ← Micro-frontend RITS
+├── mf-tps/                                 ← Micro-frontend TPS
+├── keycloak/                               ← Auth (optioneel)
+└── nginx/                                  ← Reverse proxy (optioneel)
 ```
