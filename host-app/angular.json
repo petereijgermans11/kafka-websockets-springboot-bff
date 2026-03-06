@@ -39,6 +39,7 @@
             "browser": "src/main.ts",
             "polyfills": ["es-module-shims"],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": ["@stomp/stompjs"],
             "assets": [
               { "glob": "**/*", "input": "src/assets", "output": "/assets" }
             ],

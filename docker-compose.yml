@@ -130,6 +130,7 @@ services:
     working_dir: /app
     volumes:
       - ./host-app:/app
+      - ./shared-websocket:/shared-websocket
       - /app/node_modules
     ports:
       - "4300:4300"
@@ -146,6 +147,7 @@ services:
     working_dir: /app
     volumes:
       - ./mf-tps:/app
+      - ./shared-websocket:/shared-websocket
       - /app/node_modules
     ports:
       - "4301:4301"
@@ -160,6 +162,7 @@ services:
     working_dir: /app
     volumes:
       - ./mf-rits:/app
+      - ./shared-websocket:/shared-websocket
       - /app/node_modules
     ports:
       - "4302:4302"

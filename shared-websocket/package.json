@@ -1,0 +1,12 @@
+{
+  "name": "shared-websocket",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "dependencies": {
+    "@angular/core": "^20.2.0",
+    "@stomp/rx-stomp": "^2.3.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0"
+  }
+}

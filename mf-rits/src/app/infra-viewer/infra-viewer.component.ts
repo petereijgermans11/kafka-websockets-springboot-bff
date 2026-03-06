@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { StompConnectionService } from '../services/stomp-connection.service';
+import { SharedStompConnectionService } from 'shared-websocket';
 import { InfraDataService } from '../services/rits-data.service';
 import { InfraToestandBericht } from '../model/infra-toestand.model';
 
@@ -21,7 +21,7 @@ export class InfraViewerComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly cdr: ChangeDetectorRef,
-    private readonly stompConnection: StompConnectionService,
+    private readonly stompConnection: SharedStompConnectionService,
     private readonly ritsDataService: InfraDataService,
   ) {}
 
@@ -30,7 +30,7 @@ export class InfraViewerComponent implements OnInit, OnDestroy {
 
     this.stompConnection.getStompStateOpen$()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(open => {
+      .subscribe((open: boolean) => {
         this.connected = open;
         this.cdr.markForCheck();
       });

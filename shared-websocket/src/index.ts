@@ -3,11 +3,13 @@ import { RxStomp, RxStompState } from '@stomp/rx-stomp';
 import { map, Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
-export class StompConnectionService {
+export class SharedStompConnectionService {
   private readonly rxStomp: RxStomp = new RxStomp();
+  private activated = false;
 
   connect(): void {
-    if (this.rxStomp.connected()) return;
+    if (this.activated) return;
+    this.activated = true;
 
     const wsUrl = `ws://${window.location.host}/ws`;
 

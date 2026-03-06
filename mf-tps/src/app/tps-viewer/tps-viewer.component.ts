@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { StompConnectionService } from '../services/stomp-connection.service';
+import { SharedStompConnectionService } from 'shared-websocket';
 import { TpsDataService } from '../services/tps-data.service';
 import { TreinPositieBericht } from '../model/trein-positie.model';
 
@@ -21,7 +21,7 @@ export class TpsViewerComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly cdr: ChangeDetectorRef,
-    private readonly stompConnection: StompConnectionService,
+    private readonly stompConnection: SharedStompConnectionService,
     private readonly tpsDataService: TpsDataService,
   ) {}
 
@@ -30,7 +30,7 @@ export class TpsViewerComponent implements OnInit, OnDestroy {
 
     this.stompConnection.getStompStateOpen$()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(open => {
+      .subscribe((open: boolean) => {
         this.connected = open;
         this.cdr.markForCheck();
       });
