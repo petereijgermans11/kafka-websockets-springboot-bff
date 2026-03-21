@@ -48,6 +48,21 @@ tps-websocket-server | Started TpsWebSocketServerApplication
 
 ## Testen
 
+### Inloggen (BFF + Keycloak)
+
+Open de app via: [http://localhost:4300](http://localhost:4300)
+
+- Niet ingelogd? Dan word je automatisch doorgestuurd naar `/login`.
+- Je kunt ook direct naar: [http://localhost:4300/login](http://localhost:4300/login)
+
+Relevante auth URL's:
+
+| Onderdeel | URL |
+|-----------|-----|
+| Host app (frontend) | `http://localhost:4300` |
+| BFF gateway (nginx) | `http://localhost:8008` |
+| Keycloak admin | `http://localhost:8000` |
+
 ### Browser testpagina
 
 Ga naar: [http://localhost:8080/test-client.html](http://localhost:8080/test-client.html)
